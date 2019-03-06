@@ -358,13 +358,14 @@ module Jazzy
     end
     # rubocop:enable Metrics/MethodLength
 
-    def self.make_task(mark, uid, items)
+    def self.make_task(mark, uid, items, doc_coverage)
       {
         name: mark.name,
         uid: URI.encode(uid),
         items: items,
         pre_separator: mark.has_start_dash,
         post_separator: mark.has_end_dash,
+        doc_coverage: doc_coverage,
       }
     end
 
@@ -377,6 +378,7 @@ module Jazzy
       marks.map do |mark|
         mark_children = children.select { |child| child.mark == mark }
         items = mark_children.map { |child| render_item(child, source_module) }
+        doc_coverage = ((items.map { |item| item[:abstract] == "<p>Undocumented</p>\n" ? 0 : 1 }.reduce(:+).to_f / items.count) * 100).round(3)
         uid = (mark.name || 'Unnamed').to_s
         if mark_names_counts.key?(uid)
           mark_names_counts[uid] += 1
@@ -384,7 +386,7 @@ module Jazzy
         else
           mark_names_counts[uid] = 1
         end
-        make_task(mark, uid, items)
+        make_task(mark, uid, items, doc_coverage)
       end
     end
 
